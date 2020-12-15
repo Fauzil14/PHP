@@ -4,9 +4,28 @@
 
 // pecahan uang = 1000, 2000, 5000, 10000, 20000, 50000, 100000
 
+$denominations = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100];
+
+// fungsi untuk memfilter pecahan berdasarkan request tanpa ketentuan jumlah(times)
+function denomfil($filter = null) {
+    global $denominations;
+    $top = array_filter($denominations, function($value) use ($filter) {
+        return in_array($value, $filter);
+    });
+    $bottom = array_filter($denominations, function($value) use ($top) {
+        if($value < min($top)) {
+            return $value;
+        }
+    });
+
+    $denominations = array_merge($top, $bottom);
+
+    return $denominations;
+} 
+
 // fungsi untuk mencari pecahan pembanding
 function comparison($amount) {
-    $denominations = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100];
+    global $denominations;
     $comparisons = array_filter($denominations, function($value) use ($amount) {
         if($value <= $amount) {
             return $value;
@@ -21,6 +40,12 @@ function changePiece($change, $request = null) {
     $i = 0;
     $mc = [];
     do {
+        // jika request tidak memiliki jumlah(times) maka filter denominations
+        if(is_array($request) && !array_key_exists('times', $request)) {
+            denomfil($request);
+            $request = null;
+        }
+
         // Note : swtich statement will not run if the value of the expression is null
         switch (TRUE) {
             case is_null($request):
@@ -38,17 +63,11 @@ function changePiece($change, $request = null) {
         if(!is_array($request)) {
             $mod = $change%$comparison;
             $times = ($change-$mod)/$comparison;
-            if($times > 1) {
-                $mc[] = [ 
-                            'nomminal' => $comparison, 
-                            'times'    => $times 
-                        ]; 
-            } else {
-                $mc[] = [ 
-                            'nomminal' => $comparison, 
-                            'times'    => $times 
-                        ];
-            }
+            $mc[] = [ 
+                        'nomminal' => $comparison, 
+                        'times'    => $times 
+                    ]; 
+            
             $change = $change%$comparison;
         } else {
             $request = null; // nullified the request variable so that the case didn't run after one iteration
@@ -65,23 +84,23 @@ function changePiece($change, $request = null) {
             $change = $change - $substraction;
         }
 
-        // return [    
-        //             'comparison'   => $comparison, 
-        //             'change'       => $change, 
-        //             'mc'           => $mc, 
-        //             'substraction' => $substraction,
-        //             'request' => $request
-        //         ];
         $i++;
     } while($change > 0);
     
+    
+    
+
     return $mc;
 }
 
-print_r(changePiece(306700, [['nominal' => 100000, 'times' => 2], ['nominal' => 50000, 'times' => 2], ['nominal' => 200, 'times' => 8]]));
-echo "\n";
-print_r(changePiece(306700, 20000));
-echo "\n";
-print_r(changePiece(306700));
+// print_r(changePiece(306700, [['nominal' => 100000, 'times' => 2], ['nominal' => 50000, 'times' => 2], ['nominal' => 200, 'times' => 7]]));
+// echo "\n";
+// print_r(changePiece(306700, 20000));
+// echo "\n";
+print_r(changePiece(386700, [50000, 5000, 2000])); // bug here => the result didn't return 20000 because 300000%50000 = 0
+// echo "\n";
+// print_r(changePiece(306700));
 
+// print_r(comparison([100000, 20000]));
+// print_r(comparison(20000));
 ?>
